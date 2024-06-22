@@ -1,16 +1,15 @@
 import socket
 import threading
 import random
-
 from py4j.java_gateway import JavaGateway
+
+from format_log import format_log
 
 min_dice = 10
 max_dice = 11
 
-gateway = JavaGateway()  # Conecta al servidor Gateway en el puerto por defecto 25333
-log_client = gateway.entry_point  # Obtiene la instancia de LogClientGateway
-
-log_client.logMessage("Mensaje de prueba desde Python")
+gateway = JavaGateway()
+log_client = gateway.entry_point
 
 class GameClient:
     def __init__(self, host, port):
@@ -130,6 +129,8 @@ class GameClient:
             if self.in_team and self.is_leader:
                 self.send_start_team()
                 response = self.client_socket.recv(1024).decode()
+                
+                
                 print(f"Servidor: {response}")
             else:
                 print("Solo el lider de equipo puede llamar a iniciar la partida.")

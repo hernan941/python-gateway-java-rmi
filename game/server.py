@@ -2,6 +2,12 @@ import socket
 import threading
 import time
 import random
+from format_log import format_log
+
+from py4j.java_gateway import JavaGateway
+
+gateway = JavaGateway()
+log_client = gateway.entry_point
 
 largo_tablero = 20
 
@@ -18,6 +24,31 @@ class GameServer:
         self.teams_scores = {1: 0, 2: 0}
         self.winner = 0
         self.start_monitoring()
+        self.game_id = self.get_game_id()
+        
+    def reset_game_state(self):
+        """Reinicia el estado del juego para comenzar uno nuevo."""
+        self.teams = {1: [], 2: []}  # Reiniciar equipos
+        self.team_leaders = {}
+        self.team_ready = {}
+        self.player_info = {}
+        self.all_ready = False
+        self.client_connections = {}
+        self.equipo_jugando = 0
+        self.teams_scores = {1: 0, 2: 0}
+        self.winner = 0
+        self.game_id = self.game_id + 1  # Opcional: Incrementar ID del juego
+        self.set_game_id(self.game_id)  # Guardar el nuevo ID del juego
+            
+    def get_game_id(self):
+        with open("games.txt", "r") as file:
+            content = file.read()
+            print(content)
+            return int(content)
+        
+    def set_game_id(self, game_id):
+        with open("games.txt", "w") as file:
+            file.write(str(game_id))
 
     def handle_client(self, conn, addr, player_id):
         with self.lock:
@@ -88,12 +119,16 @@ class GameServer:
         threading.Thread(target=self.monitoring_loop, daemon=True).start()
 
     def monitoring_loop(self):
-        while self.winner == 0:
+        while True:
+            if self.winner != 0:
+                log_client.logMessage(format_log('ini', self.game_id, 'fin-juego'))
+                self.broadcast_all(f"Se ha acabado la partida, el equipo ganador es {self.winner}")
+                self.reset_game_state()
+                time.sleep(5)  # Esperar un poco antes de comenzar a monitorear el nuevo juego
+                log_client.logMessage(format_log('fin', self.game_id, 'fin-juego'))
+                
             print("Monitoring...")
-            #if self.all_ready:
-            #    self.broadcast_all("Se ha iniciado la partida!")
             time.sleep(5)  # Check every 5 seconds
-        self.broadcast_all(f"Se ha acabado la partida, el equipo ganador es {self.winner}")
 
     def list_team_members(self, player_id):
         for team_id, members in self.teams.items():
@@ -113,7 +148,7 @@ class GameServer:
             if len(self.teams[team_id]) == 1:
                 self.team_leaders[team_id] = player_id
                 is_leader = True
-            return f"El jugador {player_id} se ha unido al equipo {team_id}", is_leader
+            return f"El jugador {player_id} se ha unido al equipo {self.game_id}{team_id}", is_leader
         return "ID invalido o ya pertenece a equipo.", False
 
     def create_team(self, player_id):
@@ -140,12 +175,17 @@ class GameServer:
         if team_id:
             self.team_ready[team_id] = True
             if all(self.team_ready.get(tid, False) for tid in self.teams):
+                log_client.logMessage(format_log('ini', self.game_id, 'inicio-juego'))
+                
                 self.all_ready = True
 
                 self.equipo_jugando = random.choice(list(self.teams.keys()))
                 self.broadcast_all(f"Se ha iniciado la partida! Juega el equipo {self.equipo_jugando}")
+                
+                log_client.logMessage(format_log('fin', self.game_id, 'inicio-juego'))
 
                 return "Todos los equipos están listos. El juego comienza."
+            
             return f"El equipo {team_id} liderado por el jugador {player_id} está listo."
         return "No eres lider o el equipo es invalido."
     

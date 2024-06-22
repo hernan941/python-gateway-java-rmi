@@ -26,6 +26,7 @@ class GameClient:
         self.team_inicio = []
         self.team_id = 0
         self.jugando = False
+        self.game_id = 1
 
     def send_message_to_peers(self, message):
         for member in self.team_members:
@@ -89,12 +90,20 @@ class GameClient:
             self.client_socket.send(message.encode())
             response = self.client_socket.recv(1024).decode()
             team_id = response[-1]
+            game_id = response[-2]
+
+            log_client.logMessage(format_log('ini', game_id, 'crea-jugador', team_id, self.player_id))
+            
             if "Eres lider de equipo" or "se unió como lider del equipo" in response:
                 self.is_leader = True
                 self.in_team = True
             if "se ha unido" in response:
                 self.in_team = True
             print(f"Server response: {response}")
+            
+            self.game_id = game_id
+            
+            log_client.logMessage(format_log('fin', game_id, 'crea-jugador', team_id, self.player_id))
 
         elif message == "dado":
             if self.in_team:
@@ -196,10 +205,17 @@ class GameClient:
         if any(roll['player_id'] == self.player_id for roll in self.dice_rolls):
             print("Ya has lanzado tu dado este turno.")
         else:
+            
             dice_roll = random.randint(min_dice, max_dice)
             print(f"Obtuviste un {dice_roll}.")
+            
+            log_client.logMessage(format_log('ini', game_id, 'lanza-dado', self.team_id, self.player_id, dice_roll))
+            
             self.dice_rolls.append({'player_id': self.player_id, 'dice_value': dice_roll})
             self.send_message_to_peers(f"El jugador {self.player_id} obtuvo un {dice_roll}")
+            
+            log_client.logMessage(format_log('fin', game_id, 'lanza-dado', self.team_id, self.player_id, dice_roll))
+
 
     def start_turn(self):
         # Verificar si el jugador ya lanzó 'iniciar' en este turno

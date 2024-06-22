@@ -84,7 +84,29 @@ class GameServer:
             print(f"Error with player {player_id}: {e}")
         finally:
             with self.lock:
+                # El código proporcionado para manejar la desconexión
+                team_id = None
+                for tid, members in self.teams.items():
+                    if player_id in members:
+                        team_id = tid
+                        break
+                
+                if team_id is not None and self.team_leaders.get(team_id) == player_id:
+                    self.teams[team_id].remove(player_id)
+                    if self.teams[team_id]:
+                        new_leader = self.teams[team_id][0]
+                        self.team_leaders[team_id] = new_leader
+                        print(f"Nuevo líder del equipo {team_id}: Jugador {new_leader}")
+                    else:
+                        del self.teams[team_id]
+                        del self.team_leaders[team_id]
+                        print(f"El equipo {team_id} ha sido disuelto por falta de miembros.")
+                elif team_id is not None:
+                    self.teams[team_id].remove(player_id)
+                
                 del self.player_info[player_id]
+                if conn in self.client_connections:
+                    del self.client_connections[conn]
             print(f"Jugador {player_id} se desconectó.")
 
     def process_command(self, command, player_id):
@@ -148,7 +170,7 @@ class GameServer:
             if len(self.teams[team_id]) == 1:
                 self.team_leaders[team_id] = player_id
                 is_leader = True
-            return f"El jugador {player_id} se ha unido al equipo {self.game_id}{team_id}", is_leader
+            return f"El jugador {player_id} se ha unido al equipo {self.game_id}-{team_id}", is_leader
         return "ID invalido o ya pertenece a equipo.", False
 
     def create_team(self, player_id):
@@ -161,7 +183,7 @@ class GameServer:
             self.teams[new_team_id].append(player_id)
             self.team_leaders[new_team_id] = player_id
             self.teams_scores[new_team_id] = 0
-            return f"El jugador {player_id} se unió como lider del equipo {new_team_id}"
+            return f"El jugador {player_id} se unió como lider del equipo {self.game_id}-{new_team_id}"
         
     def get_team_by_player_id(self, player_id):
         # Iterar sobre los pares clave-valor en self.team_leaders

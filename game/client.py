@@ -89,21 +89,25 @@ class GameClient:
         if message.startswith("unirse") or message.startswith("crear"):
             self.client_socket.send(message.encode())
             response = self.client_socket.recv(1024).decode()
+            
             team_id = response[-1]
-            game_id = response[-2]
-
-            log_client.logMessage(format_log('ini', game_id, 'crea-jugador', team_id, self.player_id))
+            game_id = response[-3]
             
-            if "Eres lider de equipo" or "se unió como lider del equipo" in response:
-                self.is_leader = True
-                self.in_team = True
-            if "se ha unido" in response:
-                self.in_team = True
-            print(f"Server response: {response}")
-            
-            self.game_id = game_id
-            
-            log_client.logMessage(format_log('fin', game_id, 'crea-jugador', team_id, self.player_id))
+            if "Jugador ya pertenece a equipo." in response:
+                print(f"Server response: {response}")
+            else:
+                log_client.logMessage(format_log('ini', game_id, 'crea-jugador', team_id, self.player_id))
+                
+                if "Eres lider de equipo" or "se unió como lider del equipo" in response:
+                    self.is_leader = True
+                    self.in_team = True
+                if "se ha unido" in response:
+                    self.in_team = True
+                print(f"Server response: {response}")
+                
+                self.game_id = game_id
+                
+                log_client.logMessage(format_log('fin', game_id, 'crea-jugador', team_id, self.player_id))
 
         elif message == "dado":
             if self.in_team:
@@ -139,7 +143,6 @@ class GameClient:
                 self.send_start_team()
                 response = self.client_socket.recv(1024).decode()
                 
-                
                 print(f"Servidor: {response}")
             else:
                 print("Solo el lider de equipo puede llamar a iniciar la partida.")
@@ -158,6 +161,7 @@ class GameClient:
 
         else:
             print("Jugada invalida")
+            
 
     def update_team_members(self, data):
         self.team_members = []
@@ -209,12 +213,12 @@ class GameClient:
             dice_roll = random.randint(min_dice, max_dice)
             print(f"Obtuviste un {dice_roll}.")
             
-            log_client.logMessage(format_log('ini', game_id, 'lanza-dado', self.team_id, self.player_id, dice_roll))
+            log_client.logMessage(format_log('ini', self.game_id, 'lanza-dado', self.team_id, self.player_id, dice_roll))
             
             self.dice_rolls.append({'player_id': self.player_id, 'dice_value': dice_roll})
             self.send_message_to_peers(f"El jugador {self.player_id} obtuvo un {dice_roll}")
             
-            log_client.logMessage(format_log('fin', game_id, 'lanza-dado', self.team_id, self.player_id, dice_roll))
+            log_client.logMessage(format_log('fin', self.game_id, 'lanza-dado', self.team_id, self.player_id, dice_roll))
 
 
     def start_turn(self):

@@ -22,6 +22,7 @@ Los comandos (funcionales) para empezar el juego desde cliente, son:
 - iniciar partida: Envía un mensaje al servidor, siempre y cuando todos los jugadores del equipo hayan confirmado que están listos para empezar a jugar con el comando "iniciar". Este mensaje solo puede enviarlo el líder de equipo.
 - dado: Genera un numero aleatorio entero entre el rango de números definido al inicio del código (actual entre 1 y 6). Este resultado se envía automáticamente a todos los compañeros de equipo para que lo registren.
 - enviar jugada: Verifica haber recibido todos los resultados de los dados del equipo y envía la suma como jugada grupal al servidor. Luego de enviar el mensaje, indica a los miembros del equipo borrar sus datos de juego del turno anterior. 
+- hacer lider: hace lider si es que no hay ningun miembro conectado
 
 Las variables modificables (no de entorno) corresponden al mínimo y máximo del dado y al largo del tablero, siendo los primeros dos, variables del cliente y el tercero, variable del servidor. 
 

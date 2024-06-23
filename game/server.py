@@ -24,7 +24,7 @@ class GameServer:
         self.teams_scores = {1: 0, 2: 0}
         self.winner = 0
         self.start_monitoring()
-        self.game_id = self.get_game_id()
+        self.game_id = self.get_game_id() + 1
         
     def print_game_state(self):
         print("Estado del juego:")

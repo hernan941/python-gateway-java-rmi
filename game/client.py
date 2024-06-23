@@ -93,6 +93,11 @@ class GameClient:
             team_id = response[-1]
             game_id = response[-3]
             
+            if team_id == '.':
+                # ocurrio un error
+                print(f"Server response: {response} | OCURRIO UN ERROR")
+                return
+            
             if "Jugador ya pertenece a equipo." in response:
                 print(f"Server response: {response}")
             else:

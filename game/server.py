@@ -26,6 +26,17 @@ class GameServer:
         self.start_monitoring()
         self.game_id = self.get_game_id()
         
+    def print_game_state(self):
+        print("Estado del juego:")
+        print("Equipos:", self.teams)
+        print("Líderes de equipo:", self.team_leaders)
+        print("Listos para jugar:", self.team_ready)
+        print("Todos listos:", self.all_ready)
+        print("Equipo jugando:", self.equipo_jugando)
+        print("Puntajes de equipos:", self.teams_scores)
+        print("Ganador:", self.winner)
+        print("ID del juego:", self.game_id)
+        
     def reset_game_state(self):
         """Reinicia el estado del juego para comenzar uno nuevo."""
         self.teams = {1: [], 2: []}  # Reiniciar equipos
@@ -69,6 +80,8 @@ class GameServer:
                         conn.sendall(response.encode())
                     else:
                         conn.sendall("Comando en formato invalido".encode())
+                    
+                    self.print_game_state()
                 else:
                     response = self.process_command(data, player_id)
                     conn.sendall(response.encode())
@@ -79,36 +92,13 @@ class GameServer:
 
         except Exception as e:
             print(f"Error with player {player_id}: {e}")
-        finally:
-            with self.lock:
-                # El código proporcionado para manejar la desconexión
-                team_id = None
-                for tid, members in self.teams.items():
-                    if player_id in members:
-                        team_id = tid
-                        break
-                
-                if team_id is not None and self.team_leaders.get(team_id) == player_id:
-                    self.teams[team_id].remove(player_id)
-                    if self.teams[team_id]:
-                        new_leader = self.teams[team_id][0]
-                        self.team_leaders[team_id] = new_leader
-                        print(f"Nuevo líder del equipo {team_id}: Jugador {new_leader}")
-                    else:
-                        del self.teams[team_id]
-                        del self.team_leaders[team_id]
-                        print(f"El equipo {team_id} ha sido disuelto por falta de miembros.")
-                elif team_id is not None:
-                    self.teams[team_id].remove(player_id)
-                
-                del self.player_info[player_id]
-                if conn in self.client_connections:
-                    del self.client_connections[conn]
             print(f"Jugador {player_id} se desconectó.")
 
     def process_command(self, command, player_id):
         parts = command.split()
         cmd = parts[0]
+        
+        self.print_game_state()
 
         if cmd == "unirse" and len(parts) == 2 and not self.player_in_any_team(player_id):
             return self.join_team(int(parts[1]), player_id)
@@ -126,7 +116,6 @@ class GameServer:
             return self.list_team_members(player_id)
         elif cmd == "lider":
             if player_id in self.team_leaders.values():
-                print(self.team_leaders)
                 return "Eres lider"
             else:
                 return "No eres lider"
@@ -151,7 +140,6 @@ class GameServer:
                 self.set_game_id(self.game_id)  # Guardar el nuevo ID del juego
                 
                 
-            print("Monitoring...")
             time.sleep(5)  # Check every 5 seconds
 
     def list_team_members(self, player_id):
@@ -185,7 +173,10 @@ class GameServer:
             self.teams[new_team_id].append(player_id)
             self.team_leaders[new_team_id] = player_id
             self.teams_scores[new_team_id] = 0
+            
             return f"El jugador {player_id} se unió como lider del equipo {self.game_id}-{new_team_id}"
+        
+        
         
     def get_team_by_player_id(self, player_id):
         # Iterar sobre los pares clave-valor en self.team_leaders
@@ -235,7 +226,10 @@ class GameServer:
     def record_play(self, score, player_id):
         current_team = self.equipo_jugando
         next_team = self.get_next_team(current_team)
-        if player_id == self.team_leaders.get(player_id) and 1 <= score <= 30:
+        print(player_id, self.team_leaders.get(player_id), self.team_leaders)
+        
+        
+        if self.team_leaders.get(player_id) and 1 <= score <= 30:
             self.teams_scores[current_team] += score
             if self.teams_scores[current_team] >= largo_tablero:
                 self.winner = current_team

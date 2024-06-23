@@ -37,6 +37,17 @@ class GameClient:
         self.team_id = 0
         self.jugando = False
         self.game_id = 1
+        
+    def print_state(self):
+        print(f"Player ID: {self.player_id}")
+        print(f"Dice rolls: {self.dice_rolls}")
+        print(f"In team: {self.in_team}")
+        print(f"Is leader: {self.is_leader}")
+        print(f"Team members: {self.team_members}")
+        print(f"Team inicio: {self.team_inicio}")
+        print(f"Team ID: {self.team_id}")
+        print(f"Game ID: {self.game_id}")
+        print(f"Jugando: {self.jugando}")
 
     def send_message_to_peers(self, message):
         for member in self.team_members:
@@ -84,9 +95,6 @@ class GameClient:
             prop = True
             self.team_inicio.append({'player_id': player_id, 'ready': prop})
             print(f"El jugador {player_id} está listo para empezar el juego.")
-        elif "Se ha acabado la partida" in message:
-            print("Pase por aqui, deberia!")
-            self.reset_defaults()
         elif "jugada enviada":
             self.dice_rolls = []
 
@@ -201,6 +209,11 @@ class GameClient:
             if "sumó" in response:
                 self.dice_rolls = []
                 self.send_message_to_peers("jugada enviada")
+            elif "Se ha acabado" in response:
+                print("restarting...")
+                self.reset_defaults()
+                self.print_state()
+                print("Ahora podria unirse o crear un equipo")
         else:
             print("Aun faltan jugadores por lanzar su dado.")
 

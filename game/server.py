@@ -31,14 +31,11 @@ class GameServer:
         self.teams = {1: [], 2: []}  # Reiniciar equipos
         self.team_leaders = {}
         self.team_ready = {}
-        self.player_info = {}
         self.all_ready = False
-        self.client_connections = {}
         self.equipo_jugando = 0
         self.teams_scores = {1: 0, 2: 0}
         self.winner = 0
         self.game_id = self.game_id + 1  # Opcional: Incrementar ID del juego
-        self.set_game_id(self.game_id)  # Guardar el nuevo ID del juego
             
     def get_game_id(self):
         with open("games.txt", "r") as file:
@@ -145,9 +142,14 @@ class GameServer:
             if self.winner != 0:
                 log_client.logMessage(format_log('ini', self.game_id, 'fin-juego'))
                 self.broadcast_all(f"Se ha acabado la partida, el equipo ganador es {self.winner}")
+                
                 self.reset_game_state()
+                
                 time.sleep(5)  # Esperar un poco antes de comenzar a monitorear el nuevo juego
                 log_client.logMessage(format_log('fin', self.game_id, 'fin-juego'))
+                
+                self.set_game_id(self.game_id)  # Guardar el nuevo ID del juego
+                
                 
             print("Monitoring...")
             time.sleep(5)  # Check every 5 seconds

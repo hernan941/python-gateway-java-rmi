@@ -27,6 +27,16 @@ class GameClient:
         self.team_id = 0
         self.jugando = False
         self.game_id = 1
+        
+    def reset_defaults(self):
+        self.dice_rolls = []
+        self.in_team = False
+        self.is_leader = False
+        self.team_members = []
+        self.team_inicio = []
+        self.team_id = 0
+        self.jugando = False
+        self.game_id = 1
 
     def send_message_to_peers(self, message):
         for member in self.team_members:
@@ -53,6 +63,7 @@ class GameClient:
                     print(f"Message from {addr}: {message}")
                     self.handle_message(message)
 
+
     def handle_message(self, message):
         #print(f"Mensaje de compañero: {message}")
         if "obtuvo " in message:
@@ -73,6 +84,9 @@ class GameClient:
             prop = True
             self.team_inicio.append({'player_id': player_id, 'ready': prop})
             print(f"El jugador {player_id} está listo para empezar el juego.")
+        elif "Se ha acabado la partida" in message:
+            print("Pase por aqui, deberia!")
+            self.reset_defaults()
         elif "jugada enviada":
             self.dice_rolls = []
 
@@ -215,12 +229,10 @@ class GameClient:
         if any(roll['player_id'] == self.player_id for roll in self.dice_rolls):
             print("Ya has lanzado tu dado este turno.")
         else:
-            
             dice_roll = random.randint(min_dice, max_dice)
             print(f"Obtuviste un {dice_roll}.")
             
             # print("dado!, ", self.team_id, self.player_id, dice_roll)
-            
             log_client.logMessage(format_log('ini', self.game_id, 'lanza-dado', self.team_id, self.player_id, dice_roll))
             
             self.dice_rolls.append({'player_id': self.player_id, 'dice_value': dice_roll})

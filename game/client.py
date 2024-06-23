@@ -106,6 +106,7 @@ class GameClient:
                 print(f"Server response: {response}")
                 
                 self.game_id = game_id
+                self.team_id = team_id
                 
                 log_client.logMessage(format_log('fin', game_id, 'crea-jugador', team_id, self.player_id))
 
@@ -212,6 +213,8 @@ class GameClient:
             
             dice_roll = random.randint(min_dice, max_dice)
             print(f"Obtuviste un {dice_roll}.")
+            
+            # print("dado!, ", self.team_id, self.player_id, dice_roll)
             
             log_client.logMessage(format_log('ini', self.game_id, 'lanza-dado', self.team_id, self.player_id, dice_roll))
             
